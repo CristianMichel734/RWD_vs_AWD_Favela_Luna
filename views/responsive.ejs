@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo RWD - Componentes de Servidor</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <header class="header">
+        <div class="logo">ServerTech <span>/responsive (RWD)</span></div>
+        <nav class="nav">
+            <a href="#">Inicio</a>
+            <a href="#">Catálogo</a>
+            <a href="#">Soporte</a>
+        </nav>
+        <div class="cart">🛒 Carrito (<span id="cart-count">0</span>)</div>
+    </header>
+
+    <div class="filter-toggle-container">
+        <button id="toggle-filters-btn" onclick="toggleSidebar()">🔍 Filtrar y Comparar</button>
+    </div>
+
+    <div class="main-layout">
+        <!-- Sidebar colapsable para RWD -->
+        <aside class="sidebar" id="sidebar">
+            <h2>Filtros Avanzados</h2>
+            <div class="filter-group">
+                <label for="category">Categoría:</label>
+                <select id="category" onchange="filterProducts()">
+                    <option value="all">Todas</option>
+                    <option value="cpu">Procesadores</option>
+                    <option value="ram">Memoria RAM</option>
+                    <option value="storage">Almacenamiento NVMe</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Precio Máx: $<span id="price-val">3000</span></label>
+                <input type="range" id="price-range" min="200" max="3000" step="100" value="3000" oninput="updatePrice(this.value)">
+            </div>
+            <hr>
+            <h2>Comparativa</h2>
+            <div class="chart-container">
+                <canvas id="compChart"></canvas>
+            </div>
+        </aside>
+
+        <!-- Cuadrícula de productos con <picture> y srcset -->
+        <main class="products-grid" id="products-grid">
+            <% products.forEach(p => { %>
+                <div class="card" data-cat="<%= p.cat %>" data-price="<%= p.price %>">
+                    <picture>
+                        <source media="(max-width: 639px)" srcset="<%= p.img %>?w=300&fm=webp">
+                        <source media="(min-width: 640px)" srcset="<%= p.img %>?w=600&fm=webp">
+                        <img src="<%= p.img %>?w=400" alt="<%= p.name %>" loading="lazy">
+                    </picture>
+                    <div class="card-body">
+                        <h3><%= p.name %></h3>
+                        <p class="specs"><%= p.specs %></p>
+                        <div class="card-footer">
+                            <span class="price">$<%= p.price %></span>
+                            <button onclick="addToCart()">Comprar</button>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        </main>
+    </div>
+
+    <script>
+        let cartCount = 0;
+        function addToCart() {
+            cartCount++;
+            document.getElementById("cart-count").innerText = cartCount;
+        }
+
+        function toggleSidebar() {
+            document.getElementById("sidebar").classList.toggle("open");
+        }
+
+        function filterProducts() {
+            const cat = document.getElementById("category").value;
+            const maxPrice = parseFloat(document.getElementById("price-range").value);
+            const cards = document.querySelectorAll(".card");
+
+            cards.forEach(card => {
+                const cCat = card.getAttribute("data-cat");
+                const cPrice = parseFloat(card.getAttribute("data-price"));
+                const matchCat = cat === "all" || cCat === cat;
+                const matchPrice = cPrice <= maxPrice;
+
+                if (matchCat && matchPrice) {
+                    card.style.display = "flex";
+                } else {
+                    card.style.display = "none";
+                }
+            });
+        }
+
+        function updatePrice(val) {
+            document.getElementById("price-val").innerText = val;
+            filterProducts();
+        }
+
+        const ctx = document.getElementById('compChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Xeon', 'EPYC', 'NVMe', 'RAM'],
+                datasets: [{ data: [85, 98, 70, 60], backgroundColor: '#2563eb' }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+    </script>
+</body>
+</html>
